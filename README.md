@@ -67,6 +67,10 @@ PowerPoint.lnk
 ```
 If you haven't included all files in the `!stacky.order` file, the rest will be appended in alphabetical order.
 
+The folder looks like this:  
+![](images/stacky-stack-folder-order.png)
+
+And the result looks like this:  
 ![](images/stacky-order-office.png)
 
 ## Why is it useful
