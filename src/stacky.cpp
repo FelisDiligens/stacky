@@ -476,7 +476,13 @@ private:
         }
 
         save(buffer);
-        return true;
+
+        /*
+            Normally just returns true without calling load();
+            I'm too dumb to properly fix the issue, that when it rebuilds the cache, only one icon gets loaded for some reason.
+            Calling "load()" here, fixes this. Why? I don't know.
+        */
+        return load();
     }
     void save(Buffer buffer) {
         ::DeleteFile(cache_path.c_str());
