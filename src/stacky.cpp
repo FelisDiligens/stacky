@@ -550,7 +550,7 @@ struct App {
 
         // Allow this window to use dark mode
         AllowDarkModeForWindow(window, true);
-        RefreshTitleBarThemeColor(window);
+        //RefreshTitleBarThemeColor(window);
 
         // Create menu
         HMENU menu = ::CreatePopupMenu();
