@@ -46,7 +46,7 @@ enum {
     WM_MENU_ITEM                = WM_BASE + 2,
     WM_OPEN_ALL                 = WM_BASE + 3,
 
-    APP_EXIT_DELAY              = 3 * 1000,
+    APP_EXIT_DELAY              = 10 * 1000, // 10 secs
 
     ERR_PATH_MISSING            = 401,
     ERR_PATH_INVALID            = 402,
@@ -107,6 +107,14 @@ struct Util {
             return ERR_PATH_INVALID;
         }
         return 0;
+    }
+    static int msgyn(const String& title, const String format, ...) {
+        static Char msgBuf[4096] = { 0 };
+        va_list arglist;
+        va_start(arglist, format);
+        vswprintf(msgBuf, format.c_str(), arglist);
+        va_end(arglist);
+        return ::MessageBox(0, msgBuf, title.c_str(), MB_YESNO | MB_ICONQUESTION);
     }
     static void msgt(const String& title, const String format, ...) {
         static Char msgBuf[4096] = { 0 };
@@ -651,6 +659,9 @@ private:
                     }
                     break;
                     case WM_OPEN_ALL: {
+                        if (Util::msgyn(L"Stacky", L"Are you sure you want to open all items?") != IDYES)
+                            break;
+
                         for (size_t i = 1; i < cache->items.size(); i++) {
                             cmd = cache->path(cache->items[i].name);
                             ::ShellExecute(0, 0, cmd.c_str(), 0, 0, SW_NORMAL);
