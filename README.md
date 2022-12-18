@@ -20,7 +20,7 @@ Stacky needs [Visual C++ Redistributable for Visual Studio 2015 - 2022](https://
 
 ## Download
 
-I compiled it again and it works perfectly fine on Windows 10.
+I compiled it again and it works perfectly fine on Windows 10 (22H2) and Windows 11.
 
 Just download `stacky-x64.zip` and unzip. No installation required.
 
