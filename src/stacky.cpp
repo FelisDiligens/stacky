@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include "resource.h" // for version info
 
@@ -27,6 +28,7 @@ typedef std::wstring            String;
 typedef std::vector<String>     StringList;
 
 const String CACHE_FILE_NAME    = L"!stacky.cache";
+const String ORDER_FILE_NAME    = L"!stacky.order";
 const String STACKY_EXEC_NAME   = L"stacky.exe";
 const Char*  STACKY_WINDOW_NAME = L"stacky";
 const Char*  DIR_SEP            = L"\\";
@@ -119,6 +121,18 @@ struct Util {
         vswprintf(msgBuf, format.c_str(), arglist);
         va_end(arglist);
         ::MessageBox(0, msgBuf, L"Stacky", MB_OK | MB_ICONINFORMATION);
+    }
+    static bool file_exists(const String path) {
+        std::ifstream f;
+        f.open(path);
+        bool exists = f.good();
+        f.close();
+
+        return exists;
+    }
+    static bool list_has(StringList list, String str) {
+        // https://stackoverflow.com/a/19299611
+        return std::find(std::begin(list), std::end(list), str) != std::end(list);
     }
 };
 
@@ -354,9 +368,10 @@ struct Cache {
     int                 fixed_items;
     bool                was_rebuilt;
 
-    Cache(const String& stack_path) : last_modified(0), was_rebuilt(false), scanned_last_modified(0), fixed_items(0) {
+    Cache(const String& stack_path) : cache_last_modified(0), order_last_modified(0), was_rebuilt(false), scanned_last_modified(0), fixed_items(0) {
         base_dir = Util::trim(Util::rtrim(stack_path, DIR_SEP), L"\"") + DIR_SEP;
         cache_path = path(CACHE_FILE_NAME);
+        order_path = path(ORDER_FILE_NAME);
     }
 
     String path(const String& file = L"") const  { 
@@ -370,7 +385,7 @@ struct Cache {
         }
         do {
             String filename = ffd.cFileName;
-            if (filename == L"." || filename == L".." || ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
+            if (filename == L"." || filename == L".." || filename.rfind(L"!stacky", 0) == 0 || ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
                 continue;
             scanned_items.push_back(filename);
             update_max_modified(filename);
@@ -392,7 +407,11 @@ struct Cache {
         }
 
 
-        last_modified = Util::get_modified(cache_path);
+        cache_last_modified = Util::get_modified(cache_path);
+        if (read_order_file())
+            order_last_modified = Util::get_modified(order_path);
+        else
+            order_last_modified = 0;
 
         if (is_outdated()) {
             rebuild();
@@ -405,9 +424,31 @@ struct Cache {
 private:
     String      base_dir;
     String      cache_path;
-    Time        last_modified;
+    String      order_path;
+    Time        cache_last_modified;
+    Time        order_last_modified;
     StringList  scanned_items;
+    StringList  ordered_items;
     Time        scanned_last_modified;
+
+    bool read_order_file() {
+        std::ifstream f;
+        f.open(order_path);
+
+        if (!f.good())
+            return false;
+
+        for (std::string line; getline(f, line); )
+        {
+            String converted_str = std::wstring(line.begin(), line.end()).c_str();
+            ordered_items.push_back(converted_str);
+            printf(line.c_str());
+        }
+
+        f.close();
+
+        return true;
+    }
 
     bool rebuild() {
         Buffer buffer;
@@ -417,11 +458,21 @@ private:
         item.create(L"Open:  " + Util::rtrim(path(), DIR_SEP), path());
         item.serialize(buffer);
         items.push_back(item);
+        for (size_t i = 0; i < ordered_items.size(); i++) {
+            String file_name = ordered_items[i];
+            if (Util::file_exists(path(file_name))) {
+                item.create(file_name, path(file_name));
+                item.serialize(buffer);
+                items.push_back(item);
+            }
+        }
         for (size_t i = 0; i < scanned_items.size(); i++) {
             String file_name = scanned_items[i];
-            item.create(file_name, path(file_name));
-            item.serialize(buffer);
-            items.push_back(item);
+            if (!Util::list_has(ordered_items, file_name)) {
+                item.create(file_name, path(file_name));
+                item.serialize(buffer);
+                items.push_back(item);
+            }
         }
 
         save(buffer);
@@ -438,11 +489,19 @@ private:
     }
     bool is_outdated() {
 
-        if (scanned_last_modified > last_modified || items.size() < 1 || scanned_items.size() + 1 != items.size()) {
+        if (scanned_last_modified > cache_last_modified || order_last_modified > cache_last_modified || items.size() < 1 || scanned_items.size() + 1 != items.size()) {
             return true;
         }
-        for (size_t i = 0; i < scanned_items.size(); i++) if (scanned_items[i] != items[i + 1].name) {
-            return true;
+        for (size_t i = 0; i < scanned_items.size(); i++) {
+            bool in_list = false;
+            for (size_t l = 1; l < items.size(); l++) {
+                if (scanned_items[i] == items[l].name) {
+                    in_list = true;
+                    break;
+                }
+            }
+            if (!in_list)
+                return true;
         }
         return false;
     }
