@@ -18,6 +18,8 @@
 
 #include "resource.h" // for version info
 
+#include "DarkMode.h" // https://github.com/ysc3839/win32-darkmode
+
 /**************************************************************************************************
  * Simple types and constants
  **************************************************************************************************/
@@ -521,6 +523,10 @@ struct App {
     App(Cache* c) : cache(c), window(0) { }
 
     bool init() {
+        // Init dark mode
+        InitDarkMode();
+        AllowDarkModeForApp(true);
+
         // Create window
         Util::kill_other_stackies();
         WNDCLASS wc = { 0 };
@@ -534,7 +540,11 @@ struct App {
         window = ::CreateWindow(STACKY_WINDOW_NAME, STACKY_WINDOW_NAME, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, 0, 0, ::GetModuleHandle(0), 0);
         ::SetWindowLongPtr(window, GWLP_USERDATA, (LONG_PTR)cache);
 
-        // Create window
+        // Allow this window to use dark mode
+        AllowDarkModeForWindow(window, true);
+        RefreshTitleBarThemeColor(window);
+
+        // Create menu
         HMENU menu = ::CreatePopupMenu();
         cache->fixed_items = 2;
         add_item(menu, 0, WM_OPEN_TARGET_FOLDER, cache->items[0]);
@@ -625,6 +635,11 @@ private:
     static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
         switch (msg) {
+            /*case WM_CREATE: {
+                AllowDarkModeForWindow(hwnd, true);
+                RefreshTitleBarThemeColor(hwnd);
+                break;
+            }*/
             case WM_COMMAND: {
 
                 Cache* cache = (Cache*)::GetWindowLongPtr(hwnd, GWLP_USERDATA);
