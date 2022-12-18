@@ -11,6 +11,9 @@ This version has a few bug fixes and additions. Original project by [Paweł Turl
 
 You can read the original blog post in the web archive: [justafewlines.com/2013/04/stacky](https://web.archive.org/web/20160403223409/http://justafewlines.com/2013/04/stacky/)
 
+![](images/stacky-dark-mode.png)
+> Stacky in dark mode running on Windows 10
+
 ## Download
 
 I compiled it again and it works perfectly fine on Windows 10.
