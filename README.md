@@ -14,6 +14,10 @@ You can read the original blog post in the web archive: [justafewlines.com/2013/
 ![](images/stacky-dark-mode.png)
 > Stacky in dark mode running on Windows 10
 
+## Requirements
+
+Stacky needs [Visual C++ Redistributable for Visual Studio 2015 - 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+
 ## Download
 
 I compiled it again and it works perfectly fine on Windows 10.
